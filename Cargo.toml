@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/susurrus-core",
+    "crates/susurrus-md",
+    "crates/susurrus-rt",
+    "crates/susurrus-sdk",
+    "crates/susurrus-memoria",
+    "susurrus-tauri/src-tauri",
+]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+authors = ["LUDIARS"]
+repository = "https://github.com/LUDIARS/Susurrus"
+
+[workspace.dependencies]
+# 共通
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 永続化
+rusqlite = { version = "0.32", features = ["bundled", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# ID / Hash
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+blake3 = "1"
+
+# Markdown
+gray_matter = "0.2"
+pulldown-cmark = "0.12"
+
+# Network
+quinn = "0.11"
+webrtc = "0.11"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# Synergos (path 依存)
+synergos-core = { path = "../Synergos/synergos-core" }
+synergos-net  = { path = "../Synergos/synergos-net" }
+synergos-ipc  = { path = "../Synergos/synergos-ipc" }
+
+# Tauri 関連は susurrus-tauri/src-tauri/Cargo.toml にローカル

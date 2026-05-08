@@ -1,0 +1,20 @@
+[package]
+name = "susurrus-md"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Susurrus Markdown frontmatter parser/writer + tree resolver"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+blake3.workspace = true
+gray_matter.workspace = true
+pulldown-cmark.workspace = true
+tracing.workspace = true

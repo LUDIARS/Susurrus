@@ -1,0 +1,16 @@
+[package]
+name = "susurrus-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Susurrus overlay SDK for game engines / tools / viewers."
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+reqwest.workspace = true

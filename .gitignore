@@ -1,0 +1,21 @@
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Tauri
+/susurrus-tauri/src-tauri/target
+/susurrus-tauri/src-tauri/gen
+/susurrus-tauri/dist
+/susurrus-tauri/node_modules
+
+# データ (= md 正本) を repo には入れない
+/data
+/forums
+*.db
+*.db-wal
+*.db-shm
+
+# IDE
+.vscode
+.idea
+.DS_Store

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Susurrus",
+  "version": "0.0.1",
+  "identifier": "com.ludiars.susurrus",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5176",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Susurrus",
+        "width": 1100,
+        "height": 720,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false
+  }
+}
