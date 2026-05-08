@@ -210,3 +210,21 @@ pub fn reindex_all(state: State<'_, AppState>) -> Result<indexer::IndexStats, St
     let store = inner.store.clone_handle();
     indexer::reindex_all(&mut inner.db, &store).map_err(ts)
 }
+
+#[tauri::command]
+pub fn read_thread_body(
+    state: State<'_, AppState>,
+    thread_id: String,
+) -> Result<query::BodyResponse, String> {
+    let inner = state.inner.lock();
+    query::read_thread_body(&inner.db.conn, &inner.store, &thread_id).map_err(ts)
+}
+
+#[tauri::command]
+pub fn read_reply_body(
+    state: State<'_, AppState>,
+    reply_id: String,
+) -> Result<query::BodyResponse, String> {
+    let inner = state.inner.lock();
+    query::read_reply_body(&inner.db.conn, &inner.store, &reply_id).map_err(ts)
+}

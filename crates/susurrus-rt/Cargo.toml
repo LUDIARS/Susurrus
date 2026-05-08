@@ -5,16 +5,19 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Susurrus realtime transport. WebRTC datachannel + Synergos QUIC."
+description = "Susurrus realtime transport. v0.2 = Synergos QUIC streams; WebRTC は v1.0+ Spatial Chat で導入。"
 
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 chrono.workspace = true
-uuid.workspace = true
-quinn.workspace = true
-webrtc.workspace = true
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+ciborium = "0.2"
+serde_bytes = "0.11"
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "time"] }
