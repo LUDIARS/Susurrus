@@ -8,6 +8,7 @@ Cargo.lock
 /susurrus-tauri/frontend/node_modules
 # placeholder dist は repo に入れる (cargo check 通すため)、 ビルド成果物のみ ignore
 /susurrus-tauri/frontend/dist/assets
+/susurrus-tauri/frontend/tsconfig.tsbuildinfo
 
 # データ (= md 正本) を repo には入れない
 /data
