@@ -153,7 +153,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS reply_fts USING fts5(
     reply_id  UNINDEXED,
     author    UNINDEXED,
     ts        UNINDEXED,
-    tokenize = 'porter unicode61'
+    tokenize = 'trigram'
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS thread_fts USING fts5(
@@ -161,7 +161,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS thread_fts USING fts5(
     body,
     thread_id  UNINDEXED,
     channel_id UNINDEXED,
-    tokenize = 'porter unicode61'
+    tokenize = 'trigram'
 );
 
 CREATE TABLE IF NOT EXISTS presence (

@@ -20,11 +20,11 @@ chrono.workspace = true
 uuid.workspace = true
 blake3.workspace = true
 reqwest.workspace = true
+walkdir = "2"
+pulldown-cmark.workspace = true
 
 susurrus-md = { path = "../susurrus-md" }
 
-# Synergos crate (path 依存)
-# synergos-core = { workspace = true }
-# synergos-net  = { workspace = true }
-# synergos-ipc  = { workspace = true }
-# v0.0 では Synergos との結線は susurrus-rt 側に集約するためここでは optional
+[dev-dependencies]
+tempfile = "3"
+indoc = "2"

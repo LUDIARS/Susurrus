@@ -153,7 +153,7 @@ CREATE VIRTUAL TABLE reply_fts USING fts5(
     reply_id  UNINDEXED,
     author    UNINDEXED,
     ts        UNINDEXED,
-    tokenize = 'porter unicode61'
+    tokenize = 'trigram'   -- 日本語等の non-space 言語に対応
 );
 
 CREATE VIRTUAL TABLE thread_fts USING fts5(
@@ -161,7 +161,7 @@ CREATE VIRTUAL TABLE thread_fts USING fts5(
     body,
     thread_id UNINDEXED,
     channel_id UNINDEXED,
-    tokenize = 'porter unicode61'
+    tokenize = 'trigram'   -- 日本語等の non-space 言語に対応
 );
 ```
 

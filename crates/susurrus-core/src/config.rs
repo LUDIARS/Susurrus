@@ -18,13 +18,24 @@ pub struct Config {
     pub send_typing: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+impl Config {
+    pub fn forum_root(&self) -> PathBuf { self.data_dir.join("forums") }
+    pub fn db_path(&self) -> PathBuf { self.data_dir.join("db").join("susurrus.db") }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoriaConfig {
     /// 既定 true。 false で完全 opt-out
     #[serde(default = "yes")]
     pub enabled: bool,
     #[serde(default = "default_memoria_endpoint")]
     pub endpoint: String,
+}
+
+impl Default for MemoriaConfig {
+    fn default() -> Self {
+        Self { enabled: true, endpoint: default_memoria_endpoint() }
+    }
 }
 
 fn yes() -> bool { true }

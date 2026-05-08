@@ -7,10 +7,15 @@
 //! - Synergos bridge (susurrus-rt 経由)
 //! - presence / typing tracker
 
+pub mod cernere;
+pub mod compose;
 pub mod config;
 pub mod db;
-pub mod store;
-pub mod cernere;
+pub mod indexer;
 pub mod presence;
+pub mod query;
+pub mod store;
+pub mod text;
 
 pub use config::Config;
+pub use db::Db;
