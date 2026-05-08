@@ -20,8 +20,11 @@ futures-lite = "2"
 # Susurrus realtime types
 susurrus-rt = { path = "../susurrus-rt" }
 
-# Synergos crate (path 依存)
-synergos-ipc = { path = "../../../Synergos/synergos-ipc" }
+# Synergos の IPC 型定義 (peer-stream-extension PR #60 マージ後の main を参照)
+# ローカル開発時は path override が便利だが、 sibling repo が無い CI でも動くよう
+# 既定は git dep。 path override は workspace の [patch.crates-io] か個人 Cargo
+# で差し替える。
+synergos-ipc = { git = "https://github.com/LUDIARS/Synergos.git", branch = "main" }
 
 [dev-dependencies]
 tempfile = "3"
