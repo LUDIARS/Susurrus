@@ -1,8 +1,8 @@
 //! Susurrus Tauri shell。 IPC command + axum HTTP loopback (SDK 用) を起動。
 
-mod commands;
-mod http;
-mod state;
+pub mod commands;
+pub mod http;
+pub mod state;
 
 use state::AppState;
 use std::path::PathBuf;

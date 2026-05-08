@@ -46,7 +46,7 @@ pub fn reindex_all(db: &mut Db, store: &MdStore) -> anyhow::Result<IndexStats> {
     let tx = db.conn.transaction()?;
     for e in entries {
         match upsert_entry(&tx, store, &e) {
-            Ok(true)  => stats.upserted  += 1,
+            Ok(true) => stats.upserted += 1,
             Ok(false) => stats.unchanged += 1,
             Err(err) => {
                 warn!("indexer: upsert failed for {:?}: {err:#}", e.path);
@@ -79,7 +79,11 @@ struct ParsedEntry {
 fn parse_one(path: &Path) -> anyhow::Result<ParsedEntry> {
     let bytes = std::fs::read(path)?;
     let text_str = String::from_utf8(bytes)?;
-    let normalized = if text_str.contains('\r') { text_str.replace("\r\n", "\n") } else { text_str };
+    let normalized = if text_str.contains('\r') {
+        text_str.replace("\r\n", "\n")
+    } else {
+        text_str
+    };
     let (fm, body) = md::parse(&normalized)?;
     let md_hash = md::hash(&normalized);
     let mtime = std::fs::metadata(path)?
@@ -87,15 +91,21 @@ fn parse_one(path: &Path) -> anyhow::Result<ParsedEntry> {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0);
-    Ok(ParsedEntry { path: path.to_path_buf(), fm, body, md_hash, mtime })
+    Ok(ParsedEntry {
+        path: path.to_path_buf(),
+        fm,
+        body,
+        md_hash,
+        mtime,
+    })
 }
 
 fn kind_order(k: Kind) -> u8 {
     match k {
-        Kind::Forum   => 0,
+        Kind::Forum => 0,
         Kind::Channel => 1,
-        Kind::Thread  => 2,
-        Kind::Reply   => 3,
+        Kind::Thread => 2,
+        Kind::Reply => 3,
     }
 }
 
@@ -106,10 +116,10 @@ fn upsert_entry(tx: &Connection, store: &MdStore, e: &ParsedEntry) -> anyhow::Re
         .unwrap_or_default();
 
     let table = match e.fm.kind() {
-        Kind::Forum   => "forum",
+        Kind::Forum => "forum",
         Kind::Channel => "channel",
-        Kind::Thread  => "thread",
-        Kind::Reply   => "reply",
+        Kind::Thread => "thread",
+        Kind::Reply => "reply",
     };
     let id = e.fm.id().to_string();
     let prev_hash: Option<String> = tx
@@ -125,10 +135,10 @@ fn upsert_entry(tx: &Connection, store: &MdStore, e: &ParsedEntry) -> anyhow::Re
     }
 
     match &e.fm {
-        FrontMatter::Forum(m)   => upsert_forum(tx, m, &md_path, e.mtime, &e.md_hash)?,
+        FrontMatter::Forum(m) => upsert_forum(tx, m, &md_path, e.mtime, &e.md_hash)?,
         FrontMatter::Channel(m) => upsert_channel(tx, m, &md_path, e.mtime, &e.md_hash)?,
-        FrontMatter::Thread(m)  => upsert_thread(tx, m, &e.body, &md_path, e.mtime, &e.md_hash)?,
-        FrontMatter::Reply(m)   => upsert_reply(tx, m, &e.body, &md_path, e.mtime, &e.md_hash)?,
+        FrontMatter::Thread(m) => upsert_thread(tx, m, &e.body, &md_path, e.mtime, &e.md_hash)?,
+        FrontMatter::Reply(m) => upsert_reply(tx, m, &e.body, &md_path, e.mtime, &e.md_hash)?,
     }
     Ok(true)
 }
@@ -235,7 +245,10 @@ fn upsert_thread(
         ],
     )?;
     // tags
-    tx.execute("DELETE FROM thread_tag WHERE thread_id = ?1", params![m.id.to_string()])?;
+    tx.execute(
+        "DELETE FROM thread_tag WHERE thread_id = ?1",
+        params![m.id.to_string()],
+    )?;
     for tag in &m.tags {
         tx.execute(
             "INSERT OR IGNORE INTO thread_tag(thread_id, tag) VALUES (?1, ?2)",
@@ -288,7 +301,10 @@ fn upsert_reply(
         ],
     )?;
     // mentions
-    tx.execute("DELETE FROM reply_mention WHERE reply_id = ?1", params![m.id.to_string()])?;
+    tx.execute(
+        "DELETE FROM reply_mention WHERE reply_id = ?1",
+        params![m.id.to_string()],
+    )?;
     for u in &m.mentions {
         tx.execute(
             "INSERT OR IGNORE INTO reply_mention(reply_id, user_uri) VALUES (?1, ?2)",
@@ -296,7 +312,10 @@ fn upsert_reply(
         )?;
     }
     // attachments (再投入)
-    tx.execute("DELETE FROM reply_attachment WHERE reply_id = ?1", params![m.id.to_string()])?;
+    tx.execute(
+        "DELETE FROM reply_attachment WHERE reply_id = ?1",
+        params![m.id.to_string()],
+    )?;
     for (i, a) in m.attachments.iter().enumerate() {
         tx.execute(
             "INSERT INTO reply_attachment(reply_id, seq, kind, cid, name) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -304,7 +323,10 @@ fn upsert_reply(
         )?;
     }
     // reactions: snapshot replace
-    tx.execute("DELETE FROM reply_reaction WHERE reply_id = ?1", params![m.id.to_string()])?;
+    tx.execute(
+        "DELETE FROM reply_reaction WHERE reply_id = ?1",
+        params![m.id.to_string()],
+    )?;
     let now = chrono::Utc::now().to_rfc3339();
     for (emoji, users) in &m.reactions {
         for u in users {
@@ -315,7 +337,10 @@ fn upsert_reply(
         }
     }
     // FTS
-    tx.execute("DELETE FROM reply_fts WHERE reply_id = ?1", params![m.id.to_string()])?;
+    tx.execute(
+        "DELETE FROM reply_fts WHERE reply_id = ?1",
+        params![m.id.to_string()],
+    )?;
     let plain = text::to_plain(body);
     tx.execute(
         "INSERT INTO reply_fts(content, thread_id, reply_id, author, ts) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -337,7 +362,9 @@ fn upsert_reply(
 pub fn prune_missing(db: &mut Db, store: &MdStore) -> rusqlite::Result<usize> {
     let mut total = 0usize;
     for table in ["forum", "channel", "thread", "reply"] {
-        let mut stmt = db.conn.prepare(&format!("SELECT id, md_path FROM {table}"))?;
+        let mut stmt = db
+            .conn
+            .prepare(&format!("SELECT id, md_path FROM {table}"))?;
         let rows: Vec<(String, String)> = stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
             .filter_map(|r| r.ok())
@@ -351,7 +378,8 @@ pub fn prune_missing(db: &mut Db, store: &MdStore) -> rusqlite::Result<usize> {
             }
         }
         for id in &to_delete {
-            db.conn.execute(&format!("DELETE FROM {table} WHERE id = ?1"), params![id])?;
+            db.conn
+                .execute(&format!("DELETE FROM {table} WHERE id = ?1"), params![id])?;
         }
         total += to_delete.len();
     }

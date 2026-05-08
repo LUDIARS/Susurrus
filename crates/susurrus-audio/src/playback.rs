@@ -38,15 +38,19 @@ pub fn ingest_opus(
     encoded: &[u8],
 ) -> Result<(), PlaybackError> {
     let pcm = decoder.decode(encoded)?;
-    state.pending.entry(peer_id.to_string()).or_default().extend(pcm);
+    state
+        .pending
+        .entry(peer_id.to_string())
+        .or_default()
+        .extend(pcm);
     Ok(())
 }
 
-pub fn start_playback(
-    state: Arc<Mutex<PlaybackState>>,
-) -> Result<cpal::Stream, PlaybackError> {
+pub fn start_playback(state: Arc<Mutex<PlaybackState>>) -> Result<cpal::Stream, PlaybackError> {
     let host = cpal::default_host();
-    let device = host.default_output_device().ok_or(PlaybackError::NoDevice)?;
+    let device = host
+        .default_output_device()
+        .ok_or(PlaybackError::NoDevice)?;
     let cfg = cpal::StreamConfig {
         channels: 2,
         sample_rate: cpal::SampleRate(SAMPLE_RATE),
@@ -99,7 +103,9 @@ pub fn start_playback(
         )
         .map_err(|e| PlaybackError::Cpal(format!("{e}")))?;
 
-    stream.play().map_err(|e| PlaybackError::Cpal(format!("{e}")))?;
+    stream
+        .play()
+        .map_err(|e| PlaybackError::Cpal(format!("{e}")))?;
     Ok(stream)
 }
 

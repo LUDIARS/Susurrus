@@ -43,7 +43,11 @@ impl MemoriaClient {
     }
 
     fn require_enabled(&self) -> Result<(), MemoriaError> {
-        if !self.enabled { Err(MemoriaError::Disabled) } else { Ok(()) }
+        if !self.enabled {
+            Err(MemoriaError::Disabled)
+        } else {
+            Ok(())
+        }
     }
 
     fn auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
@@ -66,8 +70,8 @@ impl MemoriaClient {
                 body: String::from_utf8_lossy(&bytes).into_owned(),
             });
         }
-        let saved: SavedBookmark = serde_json::from_slice(&bytes)
-            .map_err(|e| MemoriaError::Response {
+        let saved: SavedBookmark =
+            serde_json::from_slice(&bytes).map_err(|e| MemoriaError::Response {
                 status: status.as_u16(),
                 body: format!("decode: {e}"),
             })?;
@@ -90,8 +94,8 @@ impl MemoriaClient {
                 body: String::from_utf8_lossy(&bytes).into_owned(),
             });
         }
-        let dig: DigResult = serde_json::from_slice(&bytes)
-            .map_err(|e| MemoriaError::Response {
+        let dig: DigResult =
+            serde_json::from_slice(&bytes).map_err(|e| MemoriaError::Response {
                 status: status.as_u16(),
                 body: format!("decode: {e}"),
             })?;
@@ -131,10 +135,16 @@ mod tests {
     #[tokio::test]
     async fn disabled_returns_disabled_error() {
         let c = MemoriaClient::new("http://127.0.0.1:5180", None, false);
-        let r = c.save_bookmark(&SaveBookmark {
-            url: None, title: "t".into(), body: "b".into(),
-            source: "test".into(), tags: vec![], created_at: None,
-        }).await;
+        let r = c
+            .save_bookmark(&SaveBookmark {
+                url: None,
+                title: "t".into(),
+                body: "b".into(),
+                source: "test".into(),
+                tags: vec![],
+                created_at: None,
+            })
+            .await;
         assert!(matches!(r, Err(MemoriaError::Disabled)));
     }
 }

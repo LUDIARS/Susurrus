@@ -43,3 +43,9 @@ susurrus-sdk      = { path = "../../crates/susurrus-sdk" }
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 audio = ["dep:susurrus-audio"]
+
+[dev-dependencies]
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }
+serde_json = { workspace = true }
+http-body-util = "0.1"

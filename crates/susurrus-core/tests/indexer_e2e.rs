@@ -103,18 +103,36 @@ fn reindex_full_tree() {
     assert_eq!(stats.failed, 0);
 
     // counts
-    let n_forum: i64 = db.conn.query_row("SELECT COUNT(*) FROM forum", [], |r| r.get(0)).unwrap();
-    let n_chan:  i64 = db.conn.query_row("SELECT COUNT(*) FROM channel", [], |r| r.get(0)).unwrap();
-    let n_thr:   i64 = db.conn.query_row("SELECT COUNT(*) FROM thread", [], |r| r.get(0)).unwrap();
-    let n_rep:   i64 = db.conn.query_row("SELECT COUNT(*) FROM reply", [], |r| r.get(0)).unwrap();
+    let n_forum: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM forum", [], |r| r.get(0))
+        .unwrap();
+    let n_chan: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM channel", [], |r| r.get(0))
+        .unwrap();
+    let n_thr: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM thread", [], |r| r.get(0))
+        .unwrap();
+    let n_rep: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM reply", [], |r| r.get(0))
+        .unwrap();
     assert_eq!((n_forum, n_chan, n_thr, n_rep), (1, 1, 1, 1));
 
     // tags
-    let n_tag: i64 = db.conn.query_row("SELECT COUNT(*) FROM thread_tag", [], |r| r.get(0)).unwrap();
+    let n_tag: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM thread_tag", [], |r| r.get(0))
+        .unwrap();
     assert_eq!(n_tag, 2);
 
     // mention
-    let n_men: i64 = db.conn.query_row("SELECT COUNT(*) FROM reply_mention", [], |r| r.get(0)).unwrap();
+    let n_men: i64 = db
+        .conn
+        .query_row("SELECT COUNT(*) FROM reply_mention", [], |r| r.get(0))
+        .unwrap();
     assert_eq!(n_men, 1);
 
     // last_reply_ts updated on thread
@@ -122,7 +140,10 @@ fn reindex_full_tree() {
         .conn
         .query_row("SELECT last_reply_ts FROM thread", [], |r| r.get(0))
         .unwrap();
-    assert!(last.is_some(), "last_reply_ts should be set after reply indexing");
+    assert!(
+        last.is_some(),
+        "last_reply_ts should be set after reply indexing"
+    );
 
     // FTS (reply): trigram tokenizer なので 3 文字以上で検索
     let hit: i64 = db
@@ -179,7 +200,9 @@ fn prune_after_delete() {
     indexer::reindex_all(&mut db, &store).unwrap();
     assert_eq!(
         1,
-        db.conn.query_row::<i64, _, _>("SELECT COUNT(*) FROM forum", [], |r| r.get(0)).unwrap()
+        db.conn
+            .query_row::<i64, _, _>("SELECT COUNT(*) FROM forum", [], |r| r.get(0))
+            .unwrap()
     );
 
     fs::remove_file(&forum_md).unwrap();
@@ -187,6 +210,8 @@ fn prune_after_delete() {
     assert_eq!(pruned, 1);
     assert_eq!(
         0,
-        db.conn.query_row::<i64, _, _>("SELECT COUNT(*) FROM forum", [], |r| r.get(0)).unwrap()
+        db.conn
+            .query_row::<i64, _, _>("SELECT COUNT(*) FROM forum", [], |r| r.get(0))
+            .unwrap()
     );
 }

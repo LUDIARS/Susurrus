@@ -71,7 +71,11 @@ pub fn list_typing(conn: &Connection, thread_id: &str) -> rusqlite::Result<Vec<T
             let until_ms = DateTime::parse_from_rfc3339(&until_iso)
                 .map(|d| d.timestamp_millis())
                 .unwrap_or(0);
-            Ok(TypingRow { thread_id, user_uri, until_ms })
+            Ok(TypingRow {
+                thread_id,
+                user_uri,
+                until_ms,
+            })
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
@@ -102,7 +106,6 @@ pub fn local_start_typing(
 mod tests {
     use super::*;
     use crate::db::Db;
-    use rusqlite::Connection;
     use susurrus_rt::typing::TypingTracker;
 
     fn fresh_db() -> Db {

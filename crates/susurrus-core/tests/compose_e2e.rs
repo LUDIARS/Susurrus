@@ -88,7 +88,10 @@ fn create_full_chain_then_query() {
     assert_eq!(threads[0].title, "Susurrus 設計レビュー");
     assert_eq!(threads[0].reply_count, 1);
     assert!(threads[0].last_reply_ts.is_some());
-    assert_eq!(threads[0].tags, vec!["chat".to_string(), "design".to_string()]);
+    assert_eq!(
+        threads[0].tags,
+        vec!["chat".to_string(), "design".to_string()]
+    );
 
     let replies = query::list_replies(&db.conn, &thread.id.to_string()).unwrap();
     assert_eq!(replies.len(), 1);

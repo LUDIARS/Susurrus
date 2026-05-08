@@ -57,7 +57,9 @@ pub struct LinkRegistry {
 }
 
 impl LinkRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn touch(&mut self, peer_id: &str, rtt_ms: Option<u32>) {
         let entry = self
@@ -84,7 +86,10 @@ impl LinkRegistry {
     }
 
     pub fn active_peers(&self) -> Vec<&PeerLink> {
-        self.peers.values().filter(|p| p.state == LinkState::Active).collect()
+        self.peers
+            .values()
+            .filter(|p| p.state == LinkState::Active)
+            .collect()
     }
 }
 

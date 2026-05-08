@@ -15,9 +15,13 @@ pub fn distance(a: &SpatialPosition, b: &SpatialPosition) -> f32 {
 
 /// 距離減衰 (linear、 max を超えたら 0)。
 pub fn linear_attenuation(d: f32, min: f32, max: f32) -> f32 {
-    if d <= min { 1.0 }
-    else if d >= max { 0.0 }
-    else { 1.0 - (d - min) / (max - min) }
+    if d <= min {
+        1.0
+    } else if d >= max {
+        0.0
+    } else {
+        1.0 - (d - min) / (max - min)
+    }
 }
 
 #[cfg(test)]
@@ -26,7 +30,15 @@ mod tests {
     use crate::types::SpatialPosition;
 
     fn p(x: f32, y: f32, z: f32) -> SpatialPosition {
-        SpatialPosition { x, y, z, qx: 0.0, qy: 0.0, qz: 0.0, qw: 0.0 }
+        SpatialPosition {
+            x,
+            y,
+            z,
+            qx: 0.0,
+            qy: 0.0,
+            qz: 0.0,
+            qw: 0.0,
+        }
     }
 
     #[test]

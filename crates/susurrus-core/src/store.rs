@@ -10,11 +10,15 @@ pub struct MdStore {
 
 impl MdStore {
     pub fn new(forum_root: impl Into<PathBuf>) -> Self {
-        Self { forum_root: forum_root.into() }
+        Self {
+            forum_root: forum_root.into(),
+        }
     }
 
     /// 軽量 clone (PathBuf 1 個コピーするだけ)。 Mutex 内で借用衝突を避けるため。
-    pub fn clone_handle(&self) -> Self { self.clone() }
+    pub fn clone_handle(&self) -> Self {
+        self.clone()
+    }
 
     /// forum_root を walk して `.md` ファイルを全列挙。
     pub fn walk(&self) -> impl Iterator<Item = PathBuf> + '_ {
@@ -28,7 +32,9 @@ impl MdStore {
 
     /// forum_root からの相対 path を返す。
     pub fn rel(&self, p: &Path) -> Option<PathBuf> {
-        p.strip_prefix(&self.forum_root).ok().map(|p| p.to_path_buf())
+        p.strip_prefix(&self.forum_root)
+            .ok()
+            .map(|p| p.to_path_buf())
     }
 }
 

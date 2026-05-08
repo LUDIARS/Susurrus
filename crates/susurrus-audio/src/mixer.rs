@@ -9,9 +9,13 @@ use susurrus_sdk::types::SpatialPosition;
 
 /// 距離 → 0.0..=1.0 の単純な linear。
 fn linear_atten(d: f32, min: f32, max: f32) -> f32 {
-    if d <= min { 1.0 }
-    else if d >= max { 0.0 }
-    else { 1.0 - (d - min) / (max - min) }
+    if d <= min {
+        1.0
+    } else if d >= max {
+        0.0
+    } else {
+        1.0 - (d - min) / (max - min)
+    }
 }
 
 /// 自分から相手への angle で pan を計算 (-1.0 = 左、 +1.0 = 右)。
@@ -50,7 +54,9 @@ pub fn mix_into_stereo(
     for (i, &s) in mono_in.iter().enumerate() {
         let li = i * 2;
         let ri = li + 1;
-        if ri >= mix_buffer.len() { break; }
+        if ri >= mix_buffer.len() {
+            break;
+        }
         mix_buffer[li] += (s as f32 * l) as i32;
         mix_buffer[ri] += (s as f32 * r) as i32;
     }
@@ -61,7 +67,15 @@ mod tests {
     use super::*;
 
     fn pos(x: f32, y: f32, z: f32) -> SpatialPosition {
-        SpatialPosition { x, y, z, qx: 0.0, qy: 0.0, qz: 0.0, qw: 0.0 }
+        SpatialPosition {
+            x,
+            y,
+            z,
+            qx: 0.0,
+            qy: 0.0,
+            qz: 0.0,
+            qw: 0.0,
+        }
     }
 
     #[test]
@@ -70,9 +84,11 @@ mod tests {
         let mut mix = vec![0i32; 960];
         mix_into_stereo(
             &mono,
-            &pos(0.0, 0.0, 0.0),    // listener
-            &pos(100.0, 0.0, 0.0),  // 100m 離れた speaker
-            &mut mix, 1.0, 50.0,
+            &pos(0.0, 0.0, 0.0),   // listener
+            &pos(100.0, 0.0, 0.0), // 100m 離れた speaker
+            &mut mix,
+            1.0,
+            50.0,
         );
         let total: i64 = mix.iter().map(|&x| x as i64).sum();
         assert_eq!(total, 0, "speaker beyond max should be silenced");
@@ -85,8 +101,10 @@ mod tests {
         mix_into_stereo(
             &mono,
             &pos(0.0, 0.0, 0.0),
-            &pos(-1.0, 0.0, 0.5),    // やや左
-            &mut mix, 0.5, 10.0,
+            &pos(-1.0, 0.0, 0.5), // やや左
+            &mut mix,
+            0.5,
+            10.0,
         );
         // L チャンネル合計 vs R チャンネル合計
         let l: i64 = mix.iter().step_by(2).map(|&x| x as i64).sum();

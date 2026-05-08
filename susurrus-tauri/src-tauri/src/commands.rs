@@ -19,13 +19,19 @@ async fn publish_to_synergos(state: &std::sync::Arc<AppState>, rel_md_path: &str
     }
 }
 
-fn ts(e: impl std::fmt::Display) -> String { e.to_string() }
+fn ts(e: impl std::fmt::Display) -> String {
+    e.to_string()
+}
 
 #[tauri::command]
-pub fn ping() -> &'static str { "pong" }
+pub fn ping() -> &'static str {
+    "pong"
+}
 
 #[tauri::command]
-pub fn list_forums(state: State<'_, std::sync::Arc<AppState>>) -> Result<Vec<query::ForumRow>, String> {
+pub fn list_forums(
+    state: State<'_, std::sync::Arc<AppState>>,
+) -> Result<Vec<query::ForumRow>, String> {
     let inner = state.inner.lock();
     query::list_forums(&inner.db.conn).map_err(ts)
 }
@@ -119,7 +125,9 @@ pub struct CreateChannelArgs {
     pub sort: i32,
     pub created_by: String,
 }
-fn default_sort() -> i32 { 100 }
+fn default_sort() -> i32 {
+    100
+}
 
 #[tauri::command]
 pub async fn create_channel(
@@ -141,7 +149,10 @@ pub async fn create_channel(
             &args.created_by,
         )
         .map_err(ts)?;
-        (m.id.to_string(), format!("{}/{}/_channel.md", args.forum_path, args.name))
+        (
+            m.id.to_string(),
+            format!("{}/{}/_channel.md", args.forum_path, args.name),
+        )
     };
     publish_to_synergos(&state, &rel).await;
     Ok(id)
@@ -252,7 +263,9 @@ pub async fn create_reply(
 }
 
 #[tauri::command]
-pub fn reindex_all(state: State<'_, std::sync::Arc<AppState>>) -> Result<indexer::IndexStats, String> {
+pub fn reindex_all(
+    state: State<'_, std::sync::Arc<AppState>>,
+) -> Result<indexer::IndexStats, String> {
     let mut inner = state.inner.lock();
     let store = inner.store.clone_handle();
     indexer::reindex_all(&mut inner.db, &store).map_err(ts)
@@ -346,7 +359,12 @@ pub async fn save_to_memoria(
         })
         .await
         .map_err(ts)?;
-    tracing::info!("memoria: saved reply {} from md_path {} as bookmark {}", args.reply_id, md_path, saved.id);
+    tracing::info!(
+        "memoria: saved reply {} from md_path {} as bookmark {}",
+        args.reply_id,
+        md_path,
+        saved.id
+    );
     Ok(saved.id)
 }
 
@@ -368,10 +386,7 @@ pub fn memoria_enabled(state: State<'_, std::sync::Arc<AppState>>) -> Result<boo
 // ──────────────────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn open_thread_window(
-    app: tauri::AppHandle,
-    thread_id: String,
-) -> Result<(), String> {
+pub async fn open_thread_window(app: tauri::AppHandle, thread_id: String) -> Result<(), String> {
     let label = format!("thread-{}", thread_id.replace('-', "_"));
     if app.get_webview_window(&label).is_some() {
         // 既に開いている → focus
@@ -381,15 +396,11 @@ pub async fn open_thread_window(
         return Ok(());
     }
     let url = format!("index.html#/thread/{thread_id}");
-    let _ = tauri::WebviewWindowBuilder::new(
-        &app,
-        label,
-        tauri::WebviewUrl::App(url.into()),
-    )
-    .title(format!("Susurrus — {}", thread_id))
-    .inner_size(700.0, 800.0)
-    .build()
-    .map_err(|e| e.to_string())?;
+    let _ = tauri::WebviewWindowBuilder::new(&app, label, tauri::WebviewUrl::App(url.into()))
+        .title(format!("Susurrus — {}", thread_id))
+        .inner_size(700.0, 800.0)
+        .build()
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 

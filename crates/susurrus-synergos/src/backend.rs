@@ -20,11 +20,7 @@ pub trait SynergosBackend: Send + Sync {
         display_name: Option<&str>,
     ) -> anyhow::Result<()>;
 
-    async fn publish_update(
-        &self,
-        project_id: &str,
-        files: &[PathBuf],
-    ) -> anyhow::Result<()>;
+    async fn publish_update(&self, project_id: &str, files: &[PathBuf]) -> anyhow::Result<()>;
 
     fn incoming_files_receiver(&self) -> mpsc::Receiver<IncomingFile>;
 }
@@ -40,13 +36,19 @@ pub struct NoopBackend {
 impl Default for NoopBackend {
     fn default() -> Self {
         let (_tx, rx) = mpsc::channel::<IncomingFile>(1);
-        Self { rx: Mutex::new(Some(rx)) }
+        Self {
+            rx: Mutex::new(Some(rx)),
+        }
     }
 }
 
 impl NoopBackend {
-    pub fn new() -> Self { Self::default() }
-    pub fn arc() -> Arc<dyn SynergosBackend> { Arc::new(Self::default()) }
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn arc() -> Arc<dyn SynergosBackend> {
+        Arc::new(Self::default())
+    }
 }
 
 #[async_trait]
@@ -61,12 +63,11 @@ impl SynergosBackend for NoopBackend {
         Ok(())
     }
 
-    async fn publish_update(
-        &self,
-        _project_id: &str,
-        files: &[PathBuf],
-    ) -> anyhow::Result<()> {
-        tracing::info!("synergos backend: noop publish_update ({} files)", files.len());
+    async fn publish_update(&self, _project_id: &str, files: &[PathBuf]) -> anyhow::Result<()> {
+        tracing::info!(
+            "synergos backend: noop publish_update ({} files)",
+            files.len()
+        );
         Ok(())
     }
 
@@ -110,9 +111,7 @@ impl IpcBackend {
             })
             .await;
         // send 側でも no-op subscribe (Daemon が要求 ID を持っているため)
-        let _ = send_client
-            .send(synergos_ipc::IpcCommand::Ping)
-            .await;
+        let _ = send_client.send(synergos_ipc::IpcCommand::Ping).await;
 
         let (incoming_tx, incoming_rx) = mpsc::channel::<IncomingFile>(64);
         let (bus_tx, bus_rx) = mpsc::channel::<Frame>(256);
@@ -121,11 +120,22 @@ impl IpcBackend {
         tokio::spawn(async move {
             loop {
                 match event_client.recv_event().await {
-                    Ok(synergos_ipc::IpcEvent::TransferCompleted { peer_id, file_path, .. }) => {
+                    Ok(synergos_ipc::IpcEvent::TransferCompleted {
+                        peer_id, file_path, ..
+                    }) => {
                         let abs = std::path::PathBuf::from(file_path);
-                        let _ = incoming_tx.send(IncomingFile { peer_id, abs_path: abs }).await;
+                        let _ = incoming_tx
+                            .send(IncomingFile {
+                                peer_id,
+                                abs_path: abs,
+                            })
+                            .await;
                     }
-                    Ok(synergos_ipc::IpcEvent::PeerStreamReceived { peer_id, magic, payload }) => {
+                    Ok(synergos_ipc::IpcEvent::PeerStreamReceived {
+                        peer_id,
+                        magic,
+                        payload,
+                    }) => {
                         if let Some(m) = Magic::from_bytes(&magic) {
                             let _ = bus_tx
                                 .send(Frame {
@@ -135,7 +145,10 @@ impl IpcBackend {
                                 })
                                 .await;
                         } else {
-                            tracing::trace!("ignored unknown extension magic from synergos: {:?}", magic);
+                            tracing::trace!(
+                                "ignored unknown extension magic from synergos: {:?}",
+                                magic
+                            );
                         }
                     }
                     Ok(_) => {}
@@ -179,22 +192,22 @@ impl SynergosBackend for IpcBackend {
             display_name: display_name.map(|s| s.to_string()),
         };
         let mut g = self.send_client.lock().await;
-        let resp = g.send(cmd).await
+        let resp = g
+            .send(cmd)
+            .await
             .map_err(|e| anyhow::anyhow!("synergos send: {e}"))?;
         check_ok(resp, "ProjectOpen")
     }
 
-    async fn publish_update(
-        &self,
-        project_id: &str,
-        files: &[PathBuf],
-    ) -> anyhow::Result<()> {
+    async fn publish_update(&self, project_id: &str, files: &[PathBuf]) -> anyhow::Result<()> {
         let cmd = synergos_ipc::IpcCommand::PublishUpdate {
             project_id: project_id.to_string(),
             file_paths: files.to_vec(),
         };
         let mut g = self.send_client.lock().await;
-        let resp = g.send(cmd).await
+        let resp = g
+            .send(cmd)
+            .await
             .map_err(|e| anyhow::anyhow!("synergos send: {e}"))?;
         check_ok(resp, "PublishUpdate")
     }
@@ -248,11 +261,7 @@ impl MessageBus for SynergosBus {
                 synergos_ipc::IpcResponse::PeerList(peers) => {
                     peers.into_iter().map(|p| p.peer_id).collect()
                 }
-                other => {
-                    return Err(anyhow::anyhow!(
-                        "synergos PeerList unexpected: {other:?}"
-                    ))
-                }
+                other => return Err(anyhow::anyhow!("synergos PeerList unexpected: {other:?}")),
             }
         };
         for p in peers {
@@ -277,9 +286,11 @@ fn futures_block_on<F: std::future::Future>(f: F) -> F::Output {
 fn check_ok(resp: synergos_ipc::IpcResponse, label: &str) -> anyhow::Result<()> {
     match resp {
         synergos_ipc::IpcResponse::Ok => Ok(()),
-        synergos_ipc::IpcResponse::Error { code, message } => {
-            Err(anyhow::anyhow!("synergos {label} error code={code}: {message}"))
-        }
-        other => Err(anyhow::anyhow!("synergos {label} unexpected response: {other:?}")),
+        synergos_ipc::IpcResponse::Error { code, message } => Err(anyhow::anyhow!(
+            "synergos {label} error code={code}: {message}"
+        )),
+        other => Err(anyhow::anyhow!(
+            "synergos {label} unexpected response: {other:?}"
+        )),
     }
 }

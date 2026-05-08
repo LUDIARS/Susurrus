@@ -10,7 +10,9 @@ pub fn to_plain(md: &str) -> String {
     for ev in Parser::new(md) {
         match ev {
             Event::Text(t) | Event::Code(t) => {
-                if last_was_text { out.push(' '); }
+                if last_was_text {
+                    out.push(' ');
+                }
                 out.push_str(&t);
                 last_was_text = true;
             }
@@ -41,7 +43,9 @@ pub fn to_plain(md: &str) -> String {
     let mut prev_ws = false;
     for ch in out.chars() {
         if ch.is_whitespace() {
-            if !prev_ws { compact.push(' '); }
+            if !prev_ws {
+                compact.push(' ');
+            }
             prev_ws = true;
         } else {
             compact.push(ch);

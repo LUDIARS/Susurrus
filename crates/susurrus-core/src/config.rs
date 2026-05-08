@@ -19,8 +19,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn forum_root(&self) -> PathBuf { self.data_dir.join("forums") }
-    pub fn db_path(&self) -> PathBuf { self.data_dir.join("db").join("susurrus.db") }
+    pub fn forum_root(&self) -> PathBuf {
+        self.data_dir.join("forums")
+    }
+    pub fn db_path(&self) -> PathBuf {
+        self.data_dir.join("db").join("susurrus.db")
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,10 +38,19 @@ pub struct MemoriaConfig {
 
 impl Default for MemoriaConfig {
     fn default() -> Self {
-        Self { enabled: true, endpoint: default_memoria_endpoint() }
+        Self {
+            enabled: true,
+            endpoint: default_memoria_endpoint(),
+        }
     }
 }
 
-fn yes() -> bool { true }
-fn default_loopback_port() -> u16 { 17370 } // PORT-MAP に登録予定
-fn default_memoria_endpoint() -> String { "http://127.0.0.1:5180".into() }
+fn yes() -> bool {
+    true
+}
+fn default_loopback_port() -> u16 {
+    17370
+} // PORT-MAP に登録予定
+fn default_memoria_endpoint() -> String {
+    "http://127.0.0.1:5180".into()
+}
