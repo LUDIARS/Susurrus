@@ -55,7 +55,9 @@ Cernere 認証 + Synergos Core 依存。 active 時は WebRTC + QUIC datachannel
 | v0.4 Window detach (Tauri multi-window) | ✅ |
 | v0.5 Overlay SDK (Rust crate) | ✅ |
 | v0.6 Overlay SDK C ABI (cdylib) | ✅ |
-| v1.0 Spatial Chat (protocol skeleton + SDK 位置 API) | ✅ 音声 codec/audio backend は TODO |
+| v1.0 Spatial Chat (protocol skeleton + SDK 位置 API) | ✅ |
+| v1.0 Audio (Opus codec + cpal capture/playback + 3D mixer) | ✅ susurrus-audio crate (`--features audio` で有効化) |
+| v1.0 Synergos QUIC stream realtime (SUM1/SUT1/SUR1/SUX1/SUP1/SUS1) | ✅ Synergos PR #60 + susurrus-synergos::SynergosBus |
 | Tauri loopback HTTP server (axum) | ✅ |
 
 `cargo test --workspace` → 30 / 30 pass、 `cargo build -p susurrus-tauri` ok、 frontend ビルド ok。
@@ -67,6 +69,12 @@ cd susurrus-tauri/frontend
 npm install && npm run build      # 初回のみ
 cd ../..
 cargo run -p susurrus-tauri        # Tauri shell + axum HTTP server (17370) 起動
+```
+
+audio (Spatial Chat) を有効にする場合 (cmake が古い環境では env が必要):
+
+```bash
+CMAKE_POLICY_VERSION_MINIMUM=3.5 cargo run -p susurrus-tauri --features audio
 ```
 
 オプション env:
