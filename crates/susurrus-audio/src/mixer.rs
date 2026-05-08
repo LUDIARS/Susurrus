@@ -16,8 +16,8 @@ fn linear_atten(d: f32, min: f32, max: f32) -> f32 {
 
 /// 自分から相手への angle で pan を計算 (-1.0 = 左、 +1.0 = 右)。
 /// y 軸を「上下」、 z 軸を「奥行き」、 x を左右と仮定 (Unity 風)。
-fn pan_from_offset(dx: f32, _dy: f32, dz: f32) -> f32 {
-    // 奥行き dz と左右 dx の比率で pan。 距離が前方なら 0、 真横なら ±1。
+/// 上下 (y) は無視 (現状)。
+fn pan_from_offset(dx: f32, dz: f32) -> f32 {
     let mag = (dx * dx + dz * dz).sqrt().max(1e-6);
     (dx / mag).clamp(-1.0, 1.0)
 }
@@ -41,11 +41,8 @@ pub fn mix_into_stereo(
     if gain <= 0.0 {
         return;
     }
-    let pan = pan_from_offset(dx, dy, dz);
-    // pan -1 = full left = (1, 0)、 +1 = (0, 1)、 0 = (0.707, 0.707)
-    let left = ((1.0 - pan).max(0.0)).sqrt();
-    let right = ((1.0 + pan).max(0.0)).sqrt() / std::f32::consts::SQRT_2 * std::f32::consts::SQRT_2;
-    // 上の式を簡素化: equal-power pan
+    let pan = pan_from_offset(dx, dz);
+    // equal-power pan (-1 = full left, +1 = full right)
     let theta = (pan + 1.0) * std::f32::consts::FRAC_PI_4;
     let l = theta.cos() * gain;
     let r = theta.sin() * gain;
@@ -57,8 +54,6 @@ pub fn mix_into_stereo(
         mix_buffer[li] += (s as f32 * l) as i32;
         mix_buffer[ri] += (s as f32 * r) as i32;
     }
-    // local minor unused vars suppression
-    let _ = (left, right);
 }
 
 #[cfg(test)]
