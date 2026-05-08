@@ -24,7 +24,13 @@ walkdir = "2"
 pulldown-cmark.workspace = true
 
 susurrus-md = { path = "../susurrus-md" }
+susurrus-rt = { path = "../susurrus-rt" }
+tempfile = "3"
 
 [dev-dependencies]
 tempfile = "3"
 indoc = "2"
+
+# テスト helper で tempfile を src 側でも使うため
+[features]
+default = []

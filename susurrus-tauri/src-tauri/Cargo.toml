@@ -22,12 +22,20 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tauri = { version = "2", features = [] }
+chrono.workspace = true
 uuid.workspace = true
 parking_lot = "0.12"
 dirs-next = "2"
+futures-lite = "2"
+axum = "0.7"
+tower-http = { version = "0.6", features = ["cors"] }
+rusqlite = { workspace = true }
 
-susurrus-core = { path = "../../crates/susurrus-core" }
-susurrus-md   = { path = "../../crates/susurrus-md" }
+susurrus-core     = { path = "../../crates/susurrus-core" }
+susurrus-md       = { path = "../../crates/susurrus-md" }
+susurrus-rt       = { path = "../../crates/susurrus-rt" }
+susurrus-synergos = { path = "../../crates/susurrus-synergos" }
+susurrus-memoria  = { path = "../../crates/susurrus-memoria" }
 
 [features]
 default = ["custom-protocol"]

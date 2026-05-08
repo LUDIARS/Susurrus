@@ -1,16 +1,17 @@
 //! Susurrus overlay SDK。
 //!
-//! ホストアプリ (Pictor / Ergo / Unity 等) が組み込んで、
-//! ローカル daemon (susurrus-core) に loopback HTTP/WS で接続する薄い client。
+//! ホストアプリ (Pictor / Ergo / Unity / 任意ゲーム) から Susurrus daemon に
+//! HTTP loopback で繋ぎ、 thread を購読 / 投稿する薄いクライアント。
 //!
-//! v0.5 で Rust crate、 v0.6 で C ABI を切る。
+//! 構成:
+//! - [`client`] = Rust ネイティブ async API
+//! - [`spatial`] = Spatial Chat (v1.0+) で位置情報を送るためのヘルパ
+//! - [`abi`] = C ABI ラッパ (cdylib output `susurrus_sdk.dll/.so/.dylib`)
 
-pub struct Susurrus {
-    pub endpoint: String,
-}
+pub mod abi;
+pub mod client;
+pub mod spatial;
+pub mod types;
 
-impl Susurrus {
-    pub fn local_default() -> Self {
-        Self { endpoint: "http://127.0.0.1:17370".into() }
-    }
-}
+pub use client::Susurrus;
+pub use types::{ReplyView, SpatialPosition};
