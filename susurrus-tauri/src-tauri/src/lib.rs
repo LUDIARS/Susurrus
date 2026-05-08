@@ -30,6 +30,8 @@ pub fn run() {
             commands::create_thread,
             commands::create_reply,
             commands::reindex_all,
+            commands::read_thread_body,
+            commands::read_reply_body,
         ])
         .run(tauri::generate_context!())
         .expect("error while running susurrus-tauri");

@@ -2,27 +2,20 @@
 //!
 //! 仕様: ../../../spec/PROTOCOL.md
 //!
-//! 役割:
-//! - Synergos relay 経由 SDP/ICE 交換 (WS signaling)
-//! - WebRTC PeerConnection + datachannel 確立
-//! - datachannel 上で SUMS / SUTY / SURD / SURX / SUPN を送受信
-//! - state machine: ACTIVE / SLEEP
+//! v0.2 のスコープ:
+//! - stream magic + CBOR ペイロード型 ([`magic`], [`payload`])
+//! - LinkState enum + per-peer state ([`link`])
+//! - typing tracker (TTL 管理) ([`typing`])
+//! - [`transport::MessageBus`] trait (Synergos backend がこれを実装する)
+//!
+//! v1.0+ で WebRTC datachannel + audio track を載せる予定 (`spec/SPATIAL.md`)。
 
-pub mod magic {
-    /// message commit notification
-    pub const MS: &[u8; 4] = b"SUMS";
-    /// typing
-    pub const TY: &[u8; 4] = b"SUTY";
-    /// read cursor
-    pub const RD: &[u8; 4] = b"SURD";
-    /// reaction
-    pub const RX: &[u8; 4] = b"SURX";
-    /// presence ping
-    pub const PN: &[u8; 4] = b"SUPN";
-}
+pub mod link;
+pub mod magic;
+pub mod payload;
+pub mod transport;
+pub mod typing;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LinkState {
-    Active,
-    Sleep,
-}
+pub use link::LinkState;
+pub use magic::Magic;
+pub use transport::MessageBus;

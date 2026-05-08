@@ -33,6 +33,13 @@ export interface ThreadRow {
   pinned: boolean;
   locked: boolean;
   tags: string[];
+  md_path: string;
+}
+
+export interface BodyResponse {
+  id: string;
+  body: string;
+  md_path: string;
 }
 
 export interface ReplyRow {
@@ -72,6 +79,10 @@ export const api = {
   searchReplies: (q: string, limit = 50) =>
     invoke<ReplySearchHit[]>("search_replies", { q, limit }),
   reindexAll: () => invoke<IndexStats>("reindex_all"),
+  readThreadBody: (thread_id: string) =>
+    invoke<BodyResponse>("read_thread_body", { threadId: thread_id }),
+  readReplyBody: (reply_id: string) =>
+    invoke<BodyResponse>("read_reply_body", { replyId: reply_id }),
   createForum: (args: {
     path: string;
     name: string;

@@ -1,7 +1,13 @@
 //! SQLite から read する高レベル API。 Tauri layer から呼ぶ想定。
+//!
+//! 本文 (body) は SQLite には載せていない (= md ファイルが正本)。
+//! 本文取得は [`read_thread_body`] / [`read_reply_body`] で md を都度読む。
 
+use crate::store::MdStore;
 use rusqlite::{params, Connection, Row};
 use serde::Serialize;
+use std::path::PathBuf;
+use susurrus_md as md;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ForumRow {
@@ -36,6 +42,7 @@ pub struct ThreadRow {
     pub pinned: bool,
     pub locked: bool,
     pub tags: Vec<String>,
+    pub md_path: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -78,7 +85,7 @@ pub fn list_threads(
 ) -> rusqlite::Result<Vec<ThreadRow>> {
     let mut stmt = conn.prepare(
         "SELECT id, channel_id, forum_id, title, author, ts,
-                last_reply_ts, reply_count, pinned, locked
+                last_reply_ts, reply_count, pinned, locked, md_path
          FROM thread WHERE channel_id = ?1 AND deleted = 0
          ORDER BY pinned DESC, COALESCE(last_reply_ts, ts) DESC
          LIMIT ?2 OFFSET ?3",
@@ -97,6 +104,7 @@ pub fn list_threads(
                 pinned: row.get::<_, i32>(8)? != 0,
                 locked: row.get::<_, i32>(9)? != 0,
                 tags: Vec::new(),
+                md_path: row.get(10)?,
             })
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -175,6 +183,57 @@ pub fn search_replies(
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BodyResponse {
+    pub id: String,
+    pub body: String,
+    pub md_path: String,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum BodyError {
+    #[error("not found: {0}")]
+    NotFound(String),
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("md: {0}")]
+    Md(#[from] md::MdError),
+    #[error("sql: {0}")]
+    Sql(#[from] rusqlite::Error),
+}
+
+fn read_body(store: &MdStore, md_path: &str) -> Result<String, BodyError> {
+    let abs: PathBuf = store.forum_root.join(md_path);
+    let raw = std::fs::read_to_string(&abs)?;
+    let normalized = if raw.contains('\r') { raw.replace("\r\n", "\n") } else { raw };
+    let (_fm, body) = md::parse(&normalized)?;
+    Ok(body)
+}
+
+pub fn read_thread_body(
+    conn: &Connection,
+    store: &MdStore,
+    thread_id: &str,
+) -> Result<BodyResponse, BodyError> {
+    let md_path: String = conn
+        .query_row("SELECT md_path FROM thread WHERE id = ?1", [thread_id], |r| r.get(0))
+        .map_err(|_| BodyError::NotFound(thread_id.to_string()))?;
+    let body = read_body(store, &md_path)?;
+    Ok(BodyResponse { id: thread_id.into(), body, md_path })
+}
+
+pub fn read_reply_body(
+    conn: &Connection,
+    store: &MdStore,
+    reply_id: &str,
+) -> Result<BodyResponse, BodyError> {
+    let md_path: String = conn
+        .query_row("SELECT md_path FROM reply WHERE id = ?1", [reply_id], |r| r.get(0))
+        .map_err(|_| BodyError::NotFound(reply_id.to_string()))?;
+    let body = read_body(store, &md_path)?;
+    Ok(BodyResponse { id: reply_id.into(), body, md_path })
 }
 
 fn map_forum(row: &Row<'_>) -> rusqlite::Result<ForumRow> {

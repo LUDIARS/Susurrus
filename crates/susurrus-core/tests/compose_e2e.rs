@@ -98,4 +98,11 @@ fn create_full_chain_then_query() {
     let hits = query::search_replies(&db.conn, "返信し", 10).unwrap();
     assert_eq!(hits.len(), 1);
     assert!(hits[0].snippet.contains("返信"));
+
+    // body 取得 (thread root + reply)
+    let tb = query::read_thread_body(&db.conn, &store, &thread.id.to_string()).unwrap();
+    assert!(tb.body.contains("議題"));
+    assert!(tb.md_path.ends_with(".md"));
+    let rb = query::read_reply_body(&db.conn, &store, &replies[0].id).unwrap();
+    assert!(rb.body.contains("返信します"));
 }
