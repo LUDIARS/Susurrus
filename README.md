@@ -43,4 +43,47 @@ Cernere 認証 + Synergos Core 依存。 active 時は WebRTC + QUIC datachannel
 
 ## Status
 
-v0.0 scaffold 中 (2026-05-08-)。
+2026-05-08 時点 (v1.0 へ向けた scaffold 完了):
+
+| Milestone | 状況 |
+|---|---|
+| v0.0 spec + workspace | ✅ |
+| v0.1 daemon + md + SQLite + minimal Tauri GUI | ✅ |
+| v0.2 realtime scaffold (rt::magic/payload/link/typing/transport/MockBus) | ✅ |
+| v0.3 Memoria 連携 (HTTP client + opt-out) | ✅ |
+| v0.3 Synergos 連携 (SLEEP path = chain commit) | ✅ ACTIVE path は Synergos PR 待ち |
+| v0.4 Window detach (Tauri multi-window) | ✅ |
+| v0.5 Overlay SDK (Rust crate) | ✅ |
+| v0.6 Overlay SDK C ABI (cdylib) | ✅ |
+| v1.0 Spatial Chat (protocol skeleton + SDK 位置 API) | ✅ 音声 codec/audio backend は TODO |
+| Tauri loopback HTTP server (axum) | ✅ |
+
+`cargo test --workspace` → 30 / 30 pass、 `cargo build -p susurrus-tauri` ok、 frontend ビルド ok。
+
+## 起動
+
+```bash
+cd susurrus-tauri/frontend
+npm install && npm run build      # 初回のみ
+cd ../..
+cargo run -p susurrus-tauri        # Tauri shell + axum HTTP server (17370) 起動
+```
+
+オプション env:
+- `SUSURRUS_DATA` データディレクトリ (default: OS data_local_dir/Susurrus)
+- `SUSURRUS_USER` Cernere user URI (default: cr:local-user)
+- `SUSURRUS_SYNERGOS=1` Synergos daemon (synergos-core) に IPC 接続 (default は Noop)
+- `SUSURRUS_MEMORIA_ENDPOINT` Memoria endpoint URL (default: http://127.0.0.1:5180)
+- `SUSURRUS_MEMORIA_DISABLED` 値があれば Memoria 連携を完全 off
+- `SUSURRUS_LOCAL_PORT` SDK 用 HTTP server port (default 17370)
+
+## SDK (overlay)
+
+```rust
+use susurrus_sdk::Susurrus;
+let s = Susurrus::local_default();
+let id = s.send_reply("<thread_id>", "cr:user", "hello").await?;
+```
+
+C ABI からは `susurrus_create / send_reply / report_position / destroy`。 ヘッダは `susurrus_sdk.h` を生成予定 (cbindgen)。
+
