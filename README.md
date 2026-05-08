@@ -29,6 +29,7 @@ Cernere 認証 + Synergos Core 依存。 active 時は WebRTC + QUIC datachannel
 - [spec/MD-SCHEMA.md](spec/MD-SCHEMA.md) — Markdown frontmatter / 配置仕様
 - [spec/DB-SCHEMA.md](spec/DB-SCHEMA.md) — SQLite キャッシュスキーマ
 - [spec/PROTOCOL.md](spec/PROTOCOL.md) — QUIC / WebRTC / Synergos 経路の詳細
+- [OPERATIONAL-TEST.md](OPERATIONAL-TEST.md) — 2 物理 PC での手動 smoke 手順
 
 ## Workspace
 
