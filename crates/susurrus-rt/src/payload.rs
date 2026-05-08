@@ -53,6 +53,22 @@ pub struct SusPing {
     pub ts_ms: i64,
 }
 
+/// Spatial Chat (v1.0+) で位置情報を流すための payload。
+/// 実 audio track を WebRTC で運ぶか別経路にするかは別決定。
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SusSpatial {
+    pub forum_id: Uuid,
+    pub user_uri: String,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub qx: f32,
+    pub qy: f32,
+    pub qz: f32,
+    pub qw: f32,
+    pub ts_ms: i64,
+}
+
 /// CBOR バイト列にエンコード。
 pub fn encode<T: Serialize>(v: &T) -> Result<Vec<u8>, ciborium::ser::Error<std::io::Error>> {
     let mut buf = Vec::new();

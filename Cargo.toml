@@ -6,6 +6,7 @@ members = [
     "crates/susurrus-rt",
     "crates/susurrus-sdk",
     "crates/susurrus-memoria",
+    "crates/susurrus-synergos",
     "susurrus-tauri/src-tauri",
 ]
 

@@ -15,16 +15,19 @@ pub enum Magic {
     React,
     /// presence ping (RTT)
     Ping,
+    /// spatial position (v1.0+)
+    Spatial,
 }
 
 impl Magic {
     pub const fn bytes(self) -> [u8; 4] {
         match self {
-            Self::Msg    => *b"SUM1",
-            Self::Typing => *b"SUT1",
-            Self::Read   => *b"SUR1",
-            Self::React  => *b"SUX1",
-            Self::Ping   => *b"SUP1",
+            Self::Msg     => *b"SUM1",
+            Self::Typing  => *b"SUT1",
+            Self::Read    => *b"SUR1",
+            Self::React   => *b"SUX1",
+            Self::Ping    => *b"SUP1",
+            Self::Spatial => *b"SUS1",
         }
     }
 
@@ -36,6 +39,7 @@ impl Magic {
             b"SUR1" => Some(Self::Read),
             b"SUX1" => Some(Self::React),
             b"SUP1" => Some(Self::Ping),
+            b"SUS1" => Some(Self::Spatial),
             _ => None,
         }
     }
@@ -47,6 +51,7 @@ impl Magic {
             Self::Read => "SUR1",
             Self::React => "SUX1",
             Self::Ping => "SUP1",
+            Self::Spatial => "SUS1",
         }
     }
 }
@@ -71,7 +76,7 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        for m in [Magic::Msg, Magic::Typing, Magic::Read, Magic::React, Magic::Ping] {
+        for m in [Magic::Msg, Magic::Typing, Magic::Read, Magic::React, Magic::Ping, Magic::Spatial] {
             let b = m.bytes();
             assert_eq!(Magic::from_bytes(&b), Some(m));
         }
