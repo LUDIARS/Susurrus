@@ -5,8 +5,9 @@ Cargo.lock
 # Tauri
 /susurrus-tauri/src-tauri/target
 /susurrus-tauri/src-tauri/gen
-/susurrus-tauri/dist
-/susurrus-tauri/node_modules
+/susurrus-tauri/frontend/node_modules
+# placeholder dist は repo に入れる (cargo check 通すため)、 ビルド成果物のみ ignore
+/susurrus-tauri/frontend/dist/assets
 
 # データ (= md 正本) を repo には入れない
 /data
