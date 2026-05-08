@@ -42,18 +42,18 @@ pub enum FrontMatter {
 impl FrontMatter {
     pub fn kind(&self) -> Kind {
         match self {
-            Self::Forum(_)   => Kind::Forum,
+            Self::Forum(_) => Kind::Forum,
             Self::Channel(_) => Kind::Channel,
-            Self::Thread(_)  => Kind::Thread,
-            Self::Reply(_)   => Kind::Reply,
+            Self::Thread(_) => Kind::Thread,
+            Self::Reply(_) => Kind::Reply,
         }
     }
     pub fn id(&self) -> Uuid {
         match self {
-            Self::Forum(m)   => m.id,
+            Self::Forum(m) => m.id,
             Self::Channel(m) => m.id,
-            Self::Thread(m)  => m.id,
-            Self::Reply(m)   => m.id,
+            Self::Thread(m) => m.id,
+            Self::Reply(m) => m.id,
         }
     }
 }
@@ -97,7 +97,9 @@ pub struct ChannelMeta {
     pub archived: bool,
 }
 
-fn default_sort() -> i32 { 100 }
+fn default_sort() -> i32 {
+    100
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreadMeta {
@@ -178,7 +180,11 @@ pub fn split_frontmatter(input: &str) -> Result<(&str, &str), MdError> {
         if line.trim_end_matches(['\r', '\n']) == "---" {
             let yaml = &rest[..idx];
             let body_start = line_end;
-            let body = if body_start <= rest.len() { &rest[body_start..] } else { "" };
+            let body = if body_start <= rest.len() {
+                &rest[body_start..]
+            } else {
+                ""
+            };
             return Ok((yaml, body));
         }
         idx = line_end;
@@ -228,8 +234,14 @@ mod tests {
 
     #[test]
     fn split_no_frontmatter_errors() {
-        assert!(matches!(split_frontmatter("hello").unwrap_err(), MdError::FrontmatterMissing));
-        assert!(matches!(split_frontmatter("---\nfoo: 1\n").unwrap_err(), MdError::FrontmatterUnterminated));
+        assert!(matches!(
+            split_frontmatter("hello").unwrap_err(),
+            MdError::FrontmatterMissing
+        ));
+        assert!(matches!(
+            split_frontmatter("---\nfoo: 1\n").unwrap_err(),
+            MdError::FrontmatterUnterminated
+        ));
     }
 
     #[test]

@@ -29,7 +29,10 @@ pub struct HttpState {
 pub fn router(app: Arc<AppState>) -> Router {
     Router::new()
         .route("/v1/ping", get(ping))
-        .route("/v1/threads/:thread_id/replies", get(list_replies).post(post_reply))
+        .route(
+            "/v1/threads/:thread_id/replies",
+            get(list_replies).post(post_reply),
+        )
         .route("/v1/threads/:thread_id/typing", post(post_typing))
         .route("/v1/spatial/position", post(post_position))
         .layer(CorsLayer::permissive())
@@ -44,7 +47,9 @@ pub async fn serve(app: Arc<AppState>, port: u16) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn ping() -> &'static str { "pong" }
+async fn ping() -> &'static str {
+    "pong"
+}
 
 #[derive(Serialize)]
 struct ReplyView {
@@ -59,23 +64,33 @@ async fn list_replies(
     Path(thread_id): Path<String>,
 ) -> Result<Json<Vec<ReplyView>>, AppError> {
     let inner = s.app.inner.lock();
-    let replies = susurrus_core::query::list_replies(&inner.db.conn, &thread_id)
-        .map_err(|e| AppError::sql(e))?;
+    let replies =
+        susurrus_core::query::list_replies(&inner.db.conn, &thread_id).map_err(AppError::sql)?;
     let mut views = Vec::with_capacity(replies.len());
     for r in replies {
         let body = susurrus_core::query::read_reply_body(&inner.db.conn, &inner.store, &r.id)
             .map(|b| b.body)
             .unwrap_or_default();
-        views.push(ReplyView { id: r.id, author: r.author, ts: r.ts, body });
+        views.push(ReplyView {
+            id: r.id,
+            author: r.author,
+            ts: r.ts,
+            body,
+        });
     }
     Ok(Json(views))
 }
 
 #[derive(Deserialize)]
-struct PostReplyBody { author: String, body: String }
+struct PostReplyBody {
+    author: String,
+    body: String,
+}
 
 #[derive(Serialize)]
-struct PostReplyResp { id: String }
+struct PostReplyResp {
+    id: String,
+}
 
 async fn post_reply(
     State(s): State<HttpState>,
@@ -86,15 +101,21 @@ async fn post_reply(
         .map_err(|e| AppError::bad_request(format!("invalid thread_id: {e}")))?;
     let (forum_id, channel_id, thread_md_path) = {
         let inner = s.app.inner.lock();
-        let row: (String, String, String) = inner.db.conn.query_row(
-            "SELECT forum_id, channel_id, md_path FROM thread WHERE id = ?1",
-            [&thread_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-        ).map_err(AppError::sql)?;
+        let row: (String, String, String) = inner
+            .db
+            .conn
+            .query_row(
+                "SELECT forum_id, channel_id, md_path FROM thread WHERE id = ?1",
+                [&thread_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .map_err(AppError::sql)?;
         row
     };
-    let forum_uuid = uuid::Uuid::parse_str(&forum_id).map_err(|e| AppError::sql(rusqlite_other(e)))?;
-    let channel_uuid = uuid::Uuid::parse_str(&channel_id).map_err(|e| AppError::sql(rusqlite_other(e)))?;
+    let forum_uuid =
+        uuid::Uuid::parse_str(&forum_id).map_err(|e| AppError::sql(rusqlite_other(e)))?;
+    let channel_uuid =
+        uuid::Uuid::parse_str(&channel_id).map_err(|e| AppError::sql(rusqlite_other(e)))?;
 
     let id = {
         let mut inner = s.app.inner.lock();
@@ -111,7 +132,8 @@ async fn post_reply(
             &body.author,
             Vec::new(),
             Vec::new(),
-        ).map_err(|e| AppError::internal(format!("compose: {e}")))?;
+        )
+        .map_err(|e| AppError::internal(format!("compose: {e}")))?;
         m.id.to_string()
     };
 
@@ -121,11 +143,15 @@ async fn post_reply(
     tokio::spawn(async move {
         let abs = {
             let inner = app.inner.lock();
-            let md_path: Option<String> = inner.db.conn.query_row(
-                "SELECT md_path FROM reply WHERE id = ?1",
-                [&id_clone],
-                |r| r.get(0),
-            ).ok();
+            let md_path: Option<String> = inner
+                .db
+                .conn
+                .query_row(
+                    "SELECT md_path FROM reply WHERE id = ?1",
+                    [&id_clone],
+                    |r| r.get(0),
+                )
+                .ok();
             md_path.map(|p| inner.store.forum_root.join(p))
         };
         if let Some(abs) = abs {
@@ -137,7 +163,9 @@ async fn post_reply(
 }
 
 #[derive(Deserialize)]
-struct PostTypingBody { user: String }
+struct PostTypingBody {
+    user: String,
+}
 
 async fn post_typing(
     State(s): State<HttpState>,
@@ -154,7 +182,8 @@ async fn post_typing(
         thread,
         &b.user,
         3_000,
-    ).map_err(AppError::sql)?;
+    )
+    .map_err(AppError::sql)?;
     Ok("ok")
 }
 
@@ -170,7 +199,12 @@ async fn post_position(
     Json(b): Json<PostPositionBody>,
 ) -> Result<&'static str, AppError> {
     // 現状はロギングのみ (v1.0 で broadcast へ)
-    tracing::info!("spatial position: user={} forum={} pos={}", b.user, b.forum_id, b.position);
+    tracing::info!(
+        "spatial position: user={} forum={} pos={}",
+        b.user,
+        b.forum_id,
+        b.position
+    );
     Ok("ok")
 }
 
@@ -184,9 +218,21 @@ pub struct AppError {
 }
 
 impl AppError {
-    fn bad_request(m: impl Into<String>) -> Self { Self { status: StatusCode::BAD_REQUEST, msg: m.into() } }
-    fn internal(m: impl Into<String>) -> Self { Self { status: StatusCode::INTERNAL_SERVER_ERROR, msg: m.into() } }
-    fn sql(e: rusqlite::Error) -> Self { Self::internal(format!("sql: {e}")) }
+    fn bad_request(m: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::BAD_REQUEST,
+            msg: m.into(),
+        }
+    }
+    fn internal(m: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            msg: m.into(),
+        }
+    }
+    fn sql(e: rusqlite::Error) -> Self {
+        Self::internal(format!("sql: {e}"))
+    }
 }
 
 impl IntoResponse for AppError {

@@ -58,6 +58,8 @@ pub fn start_capture<F: Fn(Vec<u8>) + Send + Sync + 'static>(
         )
         .map_err(|e| CaptureError::Cpal(format!("{e}")))?;
 
-    stream.play().map_err(|e| CaptureError::Cpal(format!("{e}")))?;
+    stream
+        .play()
+        .map_err(|e| CaptureError::Cpal(format!("{e}")))?;
     Ok(stream)
 }

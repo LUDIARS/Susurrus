@@ -1,7 +1,10 @@
 //! Opus encode / decode wrapper。 audiopus 0.3 を使う。
 
 use crate::FRAME_SAMPLES;
-use audiopus::{coder::{Decoder, Encoder}, Application, Channels, MutSignals, SampleRate};
+use audiopus::{
+    coder::{Decoder, Encoder},
+    Application, Channels, MutSignals, SampleRate,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum CodecError {
@@ -10,7 +13,9 @@ pub enum CodecError {
 }
 
 impl From<audiopus::Error> for CodecError {
-    fn from(e: audiopus::Error) -> Self { CodecError::Audiopus(format!("{e:?}")) }
+    fn from(e: audiopus::Error) -> Self {
+        CodecError::Audiopus(format!("{e:?}"))
+    }
 }
 
 pub struct OpusEncoder {
@@ -20,11 +25,7 @@ pub struct OpusEncoder {
 impl OpusEncoder {
     /// 音声向け 48kHz mono encoder。 ビットレートは 24kbps の VoIP 想定。
     pub fn new_voice() -> Result<Self, CodecError> {
-        let mut e = Encoder::new(
-            SampleRate::Hz48000,
-            Channels::Mono,
-            Application::Voip,
-        )?;
+        let mut e = Encoder::new(SampleRate::Hz48000, Channels::Mono, Application::Voip)?;
         // 24 kbps target
         e.set_bitrate(audiopus::Bitrate::BitsPerSecond(24_000))?;
         Ok(Self { inner: e })
@@ -85,6 +86,9 @@ mod tests {
         assert_eq!(pcm.len(), FRAME_SAMPLES);
         // 無音入力 → 出力もほぼ無音
         let max_amp = pcm.iter().map(|s| s.unsigned_abs()).max().unwrap_or(0);
-        assert!(max_amp < 50, "decoded silence amplitude too high: {max_amp}");
+        assert!(
+            max_amp < 50,
+            "decoded silence amplitude too high: {max_amp}"
+        );
     }
 }

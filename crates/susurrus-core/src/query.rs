@@ -57,9 +57,8 @@ pub struct ReplyRow {
 }
 
 pub fn list_forums(conn: &Connection) -> rusqlite::Result<Vec<ForumRow>> {
-    let mut stmt = conn.prepare(
-        "SELECT id, path, name, parent_id, visibility FROM forum ORDER BY path",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT id, path, name, parent_id, visibility FROM forum ORDER BY path")?;
     let rows = stmt
         .query_map([], map_forum)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -140,8 +139,8 @@ pub fn list_replies(conn: &Connection, thread_id: &str) -> rusqlite::Result<Vec<
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     for r in rows.iter_mut() {
-        let mut s =
-            conn.prepare("SELECT user_uri FROM reply_mention WHERE reply_id = ?1 ORDER BY user_uri")?;
+        let mut s = conn
+            .prepare("SELECT user_uri FROM reply_mention WHERE reply_id = ?1 ORDER BY user_uri")?;
         r.mentions = s
             .query_map([&r.id], |row| row.get::<_, String>(0))?
             .filter_map(|x| x.ok())
@@ -207,7 +206,11 @@ pub enum BodyError {
 fn read_body(store: &MdStore, md_path: &str) -> Result<String, BodyError> {
     let abs: PathBuf = store.forum_root.join(md_path);
     let raw = std::fs::read_to_string(&abs)?;
-    let normalized = if raw.contains('\r') { raw.replace("\r\n", "\n") } else { raw };
+    let normalized = if raw.contains('\r') {
+        raw.replace("\r\n", "\n")
+    } else {
+        raw
+    };
     let (_fm, body) = md::parse(&normalized)?;
     Ok(body)
 }
@@ -218,10 +221,18 @@ pub fn read_thread_body(
     thread_id: &str,
 ) -> Result<BodyResponse, BodyError> {
     let md_path: String = conn
-        .query_row("SELECT md_path FROM thread WHERE id = ?1", [thread_id], |r| r.get(0))
+        .query_row(
+            "SELECT md_path FROM thread WHERE id = ?1",
+            [thread_id],
+            |r| r.get(0),
+        )
         .map_err(|_| BodyError::NotFound(thread_id.to_string()))?;
     let body = read_body(store, &md_path)?;
-    Ok(BodyResponse { id: thread_id.into(), body, md_path })
+    Ok(BodyResponse {
+        id: thread_id.into(),
+        body,
+        md_path,
+    })
 }
 
 pub fn read_reply_body(
@@ -230,10 +241,16 @@ pub fn read_reply_body(
     reply_id: &str,
 ) -> Result<BodyResponse, BodyError> {
     let md_path: String = conn
-        .query_row("SELECT md_path FROM reply WHERE id = ?1", [reply_id], |r| r.get(0))
+        .query_row("SELECT md_path FROM reply WHERE id = ?1", [reply_id], |r| {
+            r.get(0)
+        })
         .map_err(|_| BodyError::NotFound(reply_id.to_string()))?;
     let body = read_body(store, &md_path)?;
-    Ok(BodyResponse { id: reply_id.into(), body, md_path })
+    Ok(BodyResponse {
+        id: reply_id.into(),
+        body,
+        md_path,
+    })
 }
 
 fn map_forum(row: &Row<'_>) -> rusqlite::Result<ForumRow> {

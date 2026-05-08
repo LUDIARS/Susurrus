@@ -65,12 +65,15 @@ pub fn create_forum(
     let fm = FrontMatter::Forum(meta.clone());
     let s = md::serialize(&fm, "")?;
     let abs: PathBuf = store.forum_root.join(path).join("_forum.md");
-    if let Some(p) = abs.parent() { std::fs::create_dir_all(p)?; }
+    if let Some(p) = abs.parent() {
+        std::fs::create_dir_all(p)?;
+    }
     std::fs::write(&abs, s)?;
     indexer::reindex_path(db, store, &abs)?;
     Ok(meta)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_channel(
     db: &mut Db,
     store: &MdStore,
@@ -97,12 +100,15 @@ pub fn create_channel(
     let fm = FrontMatter::Channel(meta.clone());
     let s = md::serialize(&fm, "")?;
     let abs: PathBuf = store.forum_root.join(&path).join("_channel.md");
-    if let Some(p) = abs.parent() { std::fs::create_dir_all(p)?; }
+    if let Some(p) = abs.parent() {
+        std::fs::create_dir_all(p)?;
+    }
     std::fs::write(&abs, s)?;
     indexer::reindex_path(db, store, &abs)?;
     Ok(meta)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_thread(
     db: &mut Db,
     store: &MdStore,
@@ -137,7 +143,9 @@ pub fn create_thread(
         .forum_root
         .join(channel_path)
         .join(format!("t_{date}_{short}.md"));
-    if let Some(p) = abs.parent() { std::fs::create_dir_all(p)?; }
+    if let Some(p) = abs.parent() {
+        std::fs::create_dir_all(p)?;
+    }
     std::fs::write(&abs, s)?;
     indexer::reindex_path(db, store, &abs)?;
     Ok(meta)
@@ -179,8 +187,13 @@ pub fn create_reply(
     // thread_md_path = forum_root 相対の thread root md (例 work/ludiars/general/t_*.md)
     // → reply は同名サブディレクトリの中に置く
     let thread_dir = thread_md_path.trim_end_matches(".md");
-    let abs: PathBuf = store.forum_root.join(thread_dir).join(format!("m_{short}.md"));
-    if let Some(p) = abs.parent() { std::fs::create_dir_all(p)?; }
+    let abs: PathBuf = store
+        .forum_root
+        .join(thread_dir)
+        .join(format!("m_{short}.md"));
+    if let Some(p) = abs.parent() {
+        std::fs::create_dir_all(p)?;
+    }
     std::fs::write(&abs, s)?;
     indexer::reindex_path(db, store, &abs)?;
     Ok(meta)

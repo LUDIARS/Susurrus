@@ -41,12 +41,18 @@ impl SynergosBridge {
         Self { cfg, backend }
     }
 
-    pub fn config(&self) -> &SynergosConfig { &self.cfg }
+    pub fn config(&self) -> &SynergosConfig {
+        &self.cfg
+    }
 
     /// Susurrus project を open する (idempotent)。
     pub async fn open_project(&self) -> Result<(), BridgeError> {
         self.backend
-            .project_open(&self.cfg.project_id, &self.cfg.root_path, self.cfg.display_name.as_deref())
+            .project_open(
+                &self.cfg.project_id,
+                &self.cfg.root_path,
+                self.cfg.display_name.as_deref(),
+            )
             .await
             .map_err(BridgeError::Backend)
     }

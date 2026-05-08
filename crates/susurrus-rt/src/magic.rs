@@ -22,11 +22,11 @@ pub enum Magic {
 impl Magic {
     pub const fn bytes(self) -> [u8; 4] {
         match self {
-            Self::Msg     => *b"SUM1",
-            Self::Typing  => *b"SUT1",
-            Self::Read    => *b"SUR1",
-            Self::React   => *b"SUX1",
-            Self::Ping    => *b"SUP1",
+            Self::Msg => *b"SUM1",
+            Self::Typing => *b"SUT1",
+            Self::Read => *b"SUR1",
+            Self::React => *b"SUX1",
+            Self::Ping => *b"SUP1",
             Self::Spatial => *b"SUS1",
         }
     }
@@ -65,9 +65,8 @@ pub fn write_magic<W: io::Write>(w: &mut W, m: Magic) -> io::Result<()> {
 pub fn read_magic<R: io::Read>(r: &mut R) -> io::Result<Magic> {
     let mut buf = [0u8; 4];
     r.read_exact(&mut buf)?;
-    Magic::from_bytes(&buf).ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidData, "unknown susurrus stream magic")
-    })
+    Magic::from_bytes(&buf)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "unknown susurrus stream magic"))
 }
 
 #[cfg(test)]
@@ -76,7 +75,14 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        for m in [Magic::Msg, Magic::Typing, Magic::Read, Magic::React, Magic::Ping, Magic::Spatial] {
+        for m in [
+            Magic::Msg,
+            Magic::Typing,
+            Magic::Read,
+            Magic::React,
+            Magic::Ping,
+            Magic::Spatial,
+        ] {
             let b = m.bytes();
             assert_eq!(Magic::from_bytes(&b), Some(m));
         }

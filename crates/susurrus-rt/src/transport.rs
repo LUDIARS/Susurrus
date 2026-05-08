@@ -9,8 +9,8 @@ use crate::magic::Magic;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 
 /// peer 識別子。 Synergos の PeerId (blake3 of ed25519 pub) を hex で持つ前提。
 pub type PeerId = String;
@@ -58,7 +58,11 @@ impl MockBus {
         let (tx, rx) = mpsc::channel::<Frame>(64);
         let me_id: PeerId = me.into();
         hub.lock().await.insert(me_id.clone(), tx);
-        Self { me: me_id, inbox: Mutex::new(rx), hub }
+        Self {
+            me: me_id,
+            inbox: Mutex::new(rx),
+            hub,
+        }
     }
 }
 
@@ -67,7 +71,12 @@ impl MessageBus for MockBus {
     async fn send(&self, to: &PeerId, magic: Magic, payload: Vec<u8>) -> anyhow::Result<()> {
         let map = self.hub.lock().await;
         if let Some(tx) = map.get(to) {
-            tx.send(Frame { from: self.me.clone(), magic, payload }).await?;
+            tx.send(Frame {
+                from: self.me.clone(),
+                magic,
+                payload,
+            })
+            .await?;
         }
         Ok(())
     }
@@ -75,12 +84,16 @@ impl MessageBus for MockBus {
     async fn broadcast(&self, magic: Magic, payload: Vec<u8>) -> anyhow::Result<()> {
         let map = self.hub.lock().await;
         for (peer, tx) in map.iter() {
-            if peer == &self.me { continue; }
-            let _ = tx.send(Frame {
-                from: self.me.clone(),
-                magic,
-                payload: payload.clone(),
-            }).await;
+            if peer == &self.me {
+                continue;
+            }
+            let _ = tx
+                .send(Frame {
+                    from: self.me.clone(),
+                    magic,
+                    payload: payload.clone(),
+                })
+                .await;
         }
         Ok(())
     }
@@ -106,9 +119,12 @@ mod tests {
             thread_id: Uuid::now_v7(),
             user_uri: "cr:a".into(),
             until_ms: 1_700_000_000_000,
-        }).unwrap();
+        })
+        .unwrap();
 
-        a.send(&"peer-b".to_string(), Magic::Typing, payload.clone()).await.unwrap();
+        a.send(&"peer-b".to_string(), Magic::Typing, payload.clone())
+            .await
+            .unwrap();
         let f = b.recv().await.unwrap();
         assert_eq!(f.from, "peer-a");
         assert_eq!(f.magic, Magic::Typing);

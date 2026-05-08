@@ -17,11 +17,14 @@ pub struct TypingTracker {
 }
 
 impl TypingTracker {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// 受信した typing event を記録。
     pub fn observe(&mut self, t: &SusTyping) {
-        self.inner.insert((t.thread_id, t.user_uri.clone()), t.until_ms);
+        self.inner
+            .insert((t.thread_id, t.user_uri.clone()), t.until_ms);
     }
 
     /// 現在 typing 中の (thread_id, user_uri) リスト。 期限切れは含まない。

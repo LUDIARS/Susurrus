@@ -35,7 +35,11 @@ impl Susurrus {
     }
 
     pub async fn ping(&self) -> Result<String, SdkError> {
-        let resp = self.http.get(format!("{}/v1/ping", self.endpoint)).send().await?;
+        let resp = self
+            .http
+            .get(format!("{}/v1/ping", self.endpoint))
+            .send()
+            .await?;
         Ok(resp.text().await?)
     }
 
