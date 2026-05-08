@@ -36,7 +36,10 @@ susurrus-md       = { path = "../../crates/susurrus-md" }
 susurrus-rt       = { path = "../../crates/susurrus-rt" }
 susurrus-synergos = { path = "../../crates/susurrus-synergos" }
 susurrus-memoria  = { path = "../../crates/susurrus-memoria" }
+susurrus-audio    = { path = "../../crates/susurrus-audio", optional = true }
+susurrus-sdk      = { path = "../../crates/susurrus-sdk" }
 
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+audio = ["dep:susurrus-audio"]

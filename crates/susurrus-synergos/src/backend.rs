@@ -1,18 +1,18 @@
 //! `SynergosBackend` trait と 2 つの実装:
 //! - [`NoopBackend`] = 何もしない (Synergos 未起動時の fallback)
-//! - [`IpcBackend`] = synergos-ipc::IpcClient を使う本実装
-//!
-//! どちらも `SynergosBridge` から `Arc<dyn SynergosBackend>` で受ける。
+//! - [`IpcBackend`] = synergos-ipc::IpcClient を使う本実装。
+//!   送信用と event 受信用の 2 接続を別々に張る (recv_event は &mut self を要求するため)。
 
 use crate::bridge::IncomingFile;
 use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use susurrus_rt::magic::Magic;
+use susurrus_rt::transport::{Frame, MessageBus, PeerId};
 use tokio::sync::{mpsc, Mutex};
 
 #[async_trait]
 pub trait SynergosBackend: Send + Sync {
-    /// project_id で Synergos network に参加。 idempotent な実装が望ましい。
     async fn project_open(
         &self,
         project_id: &str,
@@ -20,15 +20,12 @@ pub trait SynergosBackend: Send + Sync {
         display_name: Option<&str>,
     ) -> anyhow::Result<()>;
 
-    /// md ファイル変更を chain に commit。
     async fn publish_update(
         &self,
         project_id: &str,
         files: &[PathBuf],
     ) -> anyhow::Result<()>;
 
-    /// 受信ファイル通知を受け取る Receiver を返す。 同じ backend に対して 1 度だけ呼ぶ前提
-    /// (それ以外の場合の挙動は実装依存)。
     fn incoming_files_receiver(&self) -> mpsc::Receiver<IncomingFile>;
 }
 
@@ -74,7 +71,6 @@ impl SynergosBackend for NoopBackend {
     }
 
     fn incoming_files_receiver(&self) -> mpsc::Receiver<IncomingFile> {
-        // 1 度だけ取り出せる receiver (Noop なので常に空の受信)
         let mut guard = futures_block_on(self.rx.lock());
         guard.take().unwrap_or_else(|| {
             let (_tx, rx) = mpsc::channel::<IncomingFile>(1);
@@ -84,48 +80,88 @@ impl SynergosBackend for NoopBackend {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// IpcBackend
+// IpcBackend (本実装)
 // ──────────────────────────────────────────────────────────────────
 
 pub struct IpcBackend {
-    /// synergos-ipc::IpcClient ラッパ。 Mutex で送信を排他。
-    client: Arc<Mutex<synergos_ipc::IpcClient>>,
-    /// TransferCompleted を流すための tx。 spawn された listener task が push する。
+    /// 送信用 IpcClient。 Mutex で送信を直列化。
+    send_client: Arc<Mutex<synergos_ipc::IpcClient>>,
+    /// IncomingFile receiver (TransferCompleted 経路、 v0.3 では Noop 同等)。
     incoming_rx: Mutex<Option<mpsc::Receiver<IncomingFile>>>,
+    /// PeerStreamReceived (= MessageBus 受信) を放出する。
+    /// 1 度だけ取り出せる (= [`IpcBackend::take_message_bus`] が消費)。
+    bus_rx: Mutex<Option<mpsc::Receiver<Frame>>>,
 }
 
 impl IpcBackend {
-    /// IpcClient を新規接続して構築。 listener task も同時に spawn。
+    /// IpcClient を 2 本接続して構築。 1 本は send 用、 もう 1 本は event 受信用。
     pub async fn connect() -> anyhow::Result<Arc<Self>> {
-        let mut client = synergos_ipc::IpcClient::connect()
+        let mut send_client = synergos_ipc::IpcClient::connect()
             .await
-            .map_err(|e| anyhow::anyhow!("synergos ipc connect failed: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("synergos ipc (send) connect failed: {e}"))?;
+        let mut event_client = synergos_ipc::IpcClient::connect()
+            .await
+            .map_err(|e| anyhow::anyhow!("synergos ipc (event) connect failed: {e}"))?;
 
-        // event subscribe
-        let _ = client
+        // 送信側で event subscribe しても OK だが分担を明確化するため event 側で subscribe。
+        let _ = event_client
             .send(synergos_ipc::IpcCommand::Subscribe {
                 events: vec![synergos_ipc::event::EventFilter::All],
             })
             .await;
+        // send 側でも no-op subscribe (Daemon が要求 ID を持っているため)
+        let _ = send_client
+            .send(synergos_ipc::IpcCommand::Ping)
+            .await;
 
-        let (tx, rx) = mpsc::channel::<IncomingFile>(64);
+        let (incoming_tx, incoming_rx) = mpsc::channel::<IncomingFile>(64);
+        let (bus_tx, bus_rx) = mpsc::channel::<Frame>(256);
 
-        // event listener
+        // event listener task
         tokio::spawn(async move {
-            // NOTE: client move out — but we just took it above. We need a different
-            // arrangement: keep client in Arc<Mutex>, spawn a separate event loop.
-            // 簡略化: IpcClient::recv_event は &mut self を要求するため、
-            // 本実装では client を分割して持たせるか、あるいは cloned channel から
-            // 拾う設計にする必要がある。 v0.3 では「初回 connect 時の listener は
-            // 起動し、その後別 client を connect して send 用に使い分ける」 経路を取る。
-            // ここでは listener なしの空 future にし、 Synergos 側拡張完了後に再設計。
-            let _ = tx; // 抑制
+            loop {
+                match event_client.recv_event().await {
+                    Ok(synergos_ipc::IpcEvent::TransferCompleted { peer_id, file_path, .. }) => {
+                        let abs = std::path::PathBuf::from(file_path);
+                        let _ = incoming_tx.send(IncomingFile { peer_id, abs_path: abs }).await;
+                    }
+                    Ok(synergos_ipc::IpcEvent::PeerStreamReceived { peer_id, magic, payload }) => {
+                        if let Some(m) = Magic::from_bytes(&magic) {
+                            let _ = bus_tx
+                                .send(Frame {
+                                    from: peer_id,
+                                    magic: m,
+                                    payload,
+                                })
+                                .await;
+                        } else {
+                            tracing::trace!("ignored unknown extension magic from synergos: {:?}", magic);
+                        }
+                    }
+                    Ok(_) => {}
+                    Err(e) => {
+                        tracing::warn!("synergos event listener exited: {e}");
+                        break;
+                    }
+                }
+            }
         });
 
         Ok(Arc::new(Self {
-            client: Arc::new(Mutex::new(client)),
-            incoming_rx: Mutex::new(Some(rx)),
+            send_client: Arc::new(Mutex::new(send_client)),
+            incoming_rx: Mutex::new(Some(incoming_rx)),
+            bus_rx: Mutex::new(Some(bus_rx)),
         }))
+    }
+
+    /// MessageBus 実装を取り出す。 1 度だけ呼べる。
+    pub fn take_message_bus(self: &Arc<Self>) -> Option<SynergosBus> {
+        let mut guard = futures_block_on(self.bus_rx.lock());
+        let rx = guard.take()?;
+        Some(SynergosBus {
+            backend: self.clone(),
+            inbox: Mutex::new(rx),
+        })
     }
 }
 
@@ -142,7 +178,7 @@ impl SynergosBackend for IpcBackend {
             root_path: root_path.to_path_buf(),
             display_name: display_name.map(|s| s.to_string()),
         };
-        let mut g = self.client.lock().await;
+        let mut g = self.send_client.lock().await;
         let resp = g.send(cmd).await
             .map_err(|e| anyhow::anyhow!("synergos send: {e}"))?;
         check_ok(resp, "ProjectOpen")
@@ -157,7 +193,7 @@ impl SynergosBackend for IpcBackend {
             project_id: project_id.to_string(),
             file_paths: files.to_vec(),
         };
-        let mut g = self.client.lock().await;
+        let mut g = self.send_client.lock().await;
         let resp = g.send(cmd).await
             .map_err(|e| anyhow::anyhow!("synergos send: {e}"))?;
         check_ok(resp, "PublishUpdate")
@@ -172,12 +208,69 @@ impl SynergosBackend for IpcBackend {
     }
 }
 
+// ──────────────────────────────────────────────────────────────────
+// SynergosBus — MessageBus 実装
+// ──────────────────────────────────────────────────────────────────
+
+pub struct SynergosBus {
+    backend: Arc<IpcBackend>,
+    inbox: Mutex<mpsc::Receiver<Frame>>,
+}
+
+#[async_trait]
+impl MessageBus for SynergosBus {
+    async fn send(&self, to: &PeerId, magic: Magic, payload: Vec<u8>) -> anyhow::Result<()> {
+        let cmd = synergos_ipc::IpcCommand::PeerSendStream {
+            peer_id: to.clone(),
+            magic: magic.bytes(),
+            payload,
+        };
+        let mut g = self.backend.send_client.lock().await;
+        let resp = g
+            .send(cmd)
+            .await
+            .map_err(|e| anyhow::anyhow!("synergos send: {e}"))?;
+        check_ok(resp, "PeerSendStream")
+    }
+
+    async fn broadcast(&self, magic: Magic, payload: Vec<u8>) -> anyhow::Result<()> {
+        // Synergos には「全 peer broadcast」 IPC が無いので、 PeerList で peers を引いて
+        // 順に PeerSendStream を投げる。 v0.3 では small forum の想定で簡易実装。
+        let peers: Vec<String> = {
+            let mut g = self.backend.send_client.lock().await;
+            let resp = g
+                .send(synergos_ipc::IpcCommand::PeerList {
+                    project_id: "susurrus".into(),
+                })
+                .await
+                .map_err(|e| anyhow::anyhow!("synergos PeerList: {e}"))?;
+            match resp {
+                synergos_ipc::IpcResponse::PeerList(peers) => {
+                    peers.into_iter().map(|p| p.peer_id).collect()
+                }
+                other => {
+                    return Err(anyhow::anyhow!(
+                        "synergos PeerList unexpected: {other:?}"
+                    ))
+                }
+            }
+        };
+        for p in peers {
+            // 失敗は warning で握り潰す (1 peer 失敗で broadcast 全停止しない)
+            if let Err(e) = self.send(&p, magic, payload.clone()).await {
+                tracing::warn!("synergos broadcast to {p} failed: {e:#}");
+            }
+        }
+        Ok(())
+    }
+
+    async fn recv(&self) -> Option<Frame> {
+        self.inbox.lock().await.recv().await
+    }
+}
+
 // 同期 context (trait method の中) で Mutex::lock() するためのヘルパ。
-// 将来的に trait 全体を async にして取り除く。
 fn futures_block_on<F: std::future::Future>(f: F) -> F::Output {
-    // tokio::runtime::Handle::current で blocking 経由で進める手もあるが、
-    // 現状は Mutex の中身を取るだけなので busy spin は要らない。
-    // try_lock で十分だが、 v0.3 では同期化を最小限に。
     futures_lite::future::block_on(f)
 }
 

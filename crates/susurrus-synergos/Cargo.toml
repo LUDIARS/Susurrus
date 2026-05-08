@@ -17,6 +17,9 @@ tracing.workspace = true
 async-trait = "0.1"
 futures-lite = "2"
 
+# Susurrus realtime types
+susurrus-rt = { path = "../susurrus-rt" }
+
 # Synergos crate (path 依存)
 synergos-ipc = { path = "../../../Synergos/synergos-ipc" }
 

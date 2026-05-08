@@ -16,5 +16,5 @@
 pub mod backend;
 pub mod bridge;
 
-pub use backend::{NoopBackend, SynergosBackend};
+pub use backend::{IpcBackend, NoopBackend, SynergosBackend, SynergosBus};
 pub use bridge::{BridgeError, IncomingFile, SynergosBridge, SynergosConfig};

@@ -8,7 +8,7 @@ pub struct ReplyView {
     pub body: String,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct SpatialPosition {
     pub x: f32,
     pub y: f32,
