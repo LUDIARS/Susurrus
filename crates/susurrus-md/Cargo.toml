@@ -15,6 +15,7 @@ serde_yaml.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 blake3.workspace = true
-gray_matter.workspace = true
-pulldown-cmark.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+indoc = "2"

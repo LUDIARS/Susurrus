@@ -1,6 +1,7 @@
-//! md ファイル ↔ SQLite の同期。
+//! md ファイルの walk + 補助関数。 SQLite との同期は indexer モジュール担当。
 
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
 pub struct MdStore {
     pub forum_root: PathBuf,
@@ -11,19 +12,27 @@ impl MdStore {
         Self { forum_root: forum_root.into() }
     }
 
-    /// forum_root を walk して md を全列挙。 v0.1 で実装。
-    pub fn walk(&self) -> impl Iterator<Item = PathBuf> {
-        std::iter::empty::<PathBuf>()
+    /// forum_root を walk して `.md` ファイルを全列挙。
+    pub fn walk(&self) -> impl Iterator<Item = PathBuf> + '_ {
+        WalkDir::new(&self.forum_root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+            .map(|e| e.into_path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
     }
 
-    /// reply のファイル path を組み立てる:
-    /// `<forum_root>/<channel.path>/t_<date>_<short>/m_<short>.md`
-    pub fn reply_path(&self, _channel_path: &str, _thread_short: &str, _reply_short: &str) -> PathBuf {
-        unimplemented!()
+    /// forum_root からの相対 path を返す。
+    pub fn rel(&self, p: &Path) -> Option<PathBuf> {
+        p.strip_prefix(&self.forum_root).ok().map(|p| p.to_path_buf())
     }
 }
 
-/// FS watcher (notify) は v0.1 で導入。
-pub fn watch(_path: &Path) {
-    // TODO: notify crate
+/// FS 上の path を forum/channel/thread/reply の論理 path 文字列に変換する補助。
+/// path セパレータを `/` に正規化する。
+pub fn norm_path(p: &Path) -> String {
+    p.iter()
+        .filter_map(|s| s.to_str())
+        .collect::<Vec<_>>()
+        .join("/")
 }
