@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+#[derive(Debug, Clone)]
 pub struct MdStore {
     pub forum_root: PathBuf,
 }
@@ -11,6 +12,9 @@ impl MdStore {
     pub fn new(forum_root: impl Into<PathBuf>) -> Self {
         Self { forum_root: forum_root.into() }
     }
+
+    /// 軽量 clone (PathBuf 1 個コピーするだけ)。 Mutex 内で借用衝突を避けるため。
+    pub fn clone_handle(&self) -> Self { self.clone() }
 
     /// forum_root を walk して `.md` ファイルを全列挙。
     pub fn walk(&self) -> impl Iterator<Item = PathBuf> + '_ {

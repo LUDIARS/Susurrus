@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use susurrus_md::{self as md, FrontMatter, Kind};
 use tracing::{debug, warn};
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct IndexStats {
     pub scanned: usize,
     pub upserted: usize,
