@@ -1,0 +1,78 @@
+{
+  "repo": "Susurrus",
+  "code": "Su",
+  "review_date": "2026-05-13",
+  "commit": "338c01c",
+  "scores": {
+    "design": "B",
+    "vulnerability": "C",
+    "implementation": "B",
+    "missing_features": "B",
+    "quality": "B"
+  },
+  "score_map": { "A": 4, "B": 3, "C": 2, "D": 1 },
+  "weights": {
+    "design": 0.20,
+    "vulnerability": 0.30,
+    "implementation": 0.20,
+    "missing_features": 0.15,
+    "quality": 0.15
+  },
+  "weighted_score": 2.70,
+  "weighted_score_pct": 67.5,
+  "counts": {
+    "high": 5,
+    "medium": 7,
+    "low": 8,
+    "total": 20
+  },
+  "autofix_count": 0,
+  "autofix_applied": false,
+  "files": [
+    "REVIEW.md",
+    "REVIEW_DESIGN.md",
+    "REVIEW_VULNERABILITY.md",
+    "REVIEW_IMPLEMENTATION.md",
+    "REVIEW_MISSING_FEATURES.md",
+    "REVIEW_QUALITY.md",
+    "AUTOFIX.md",
+    "latest.json"
+  ],
+  "key_findings": [
+    {
+      "severity": "high",
+      "category": "vulnerability",
+      "title": "loopback HTTP の CSRF + なりすまし",
+      "location": "susurrus-tauri/src-tauri/src/http.rs:38,86-138",
+      "summary": "CorsLayer::permissive() + author クライアント信頼でローカル悪意ページから任意 user として投稿可"
+    },
+    {
+      "severity": "high",
+      "category": "missing_features",
+      "title": "Cernere verify が unimplemented",
+      "location": "crates/susurrus-core/src/cernere.rs:11",
+      "summary": "README 中核機能が panic ハザード"
+    },
+    {
+      "severity": "high",
+      "category": "implementation",
+      "title": "incoming md → reindex pipeline 未配線",
+      "location": "crates/susurrus-synergos/src/bridge.rs:69, susurrus-tauri/src-tauri/src/lib.rs:13",
+      "summary": "Synergos auto-pull で届いた md が UI に反映されない"
+    },
+    {
+      "severity": "high",
+      "category": "design",
+      "title": "ACTIVE 経路の仕様食い違い",
+      "location": "spec/SPEC.md:78-104 vs spec/PROTOCOL.md:1-12",
+      "summary": "SPEC は WebRTC、PROTOCOL/実装は Synergos QUIC。README/SPEC を PROTOCOL に揃える必要"
+    },
+    {
+      "severity": "high",
+      "category": "quality",
+      "title": "Workspace path dep 違反",
+      "location": "Cargo.toml:50-52",
+      "summary": "synergos-core/synergos-net が path のまま。LUDIARS の cross-repo path dep 禁止ルール違反"
+    }
+  ]
+}
